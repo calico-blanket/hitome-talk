@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ひと目トーク</title>
+<meta name="description" content="耳が聞こえる人と聞こえない人が、ボタンと大きな文字で素早く意思疎通するためのツール。">
+<meta name="theme-color" content="#0B5CAD">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* 実行環境が与えていた土台 */
+[hidden] { display: none !important; }
+body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* layout: 画面を2分割。横長なら 左=大きな表示 / 右=ボタン。縦長なら 上=表示 / 下=ボタン。
+   色は「聞こえる人=青」「聞こえない人=橙」「どちらでも=灰青」。色だけに頼らず、ラベル・形・✓でも区別する。 */
+:root {
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --ink: #101820;
+  --ink-2: #404C58;
+  --line: #9AA6B2;
+  --focus: #6B21A8;
+
+  --h-bg: #E3EEFB; --h-ink: #07243F; --h-edge: #0B5CAD; --h-solid: #0B5CAD; --h-on: #FFFFFF;
+  --d-bg: #FFEFD9; --d-ink: #3E1F00; --d-edge: #9A3F00; --d-solid: #9A3F00; --d-on: #FFFFFF;
+  --a-bg: #E4EDEF; --a-ink: #102A30; --a-edge: #35616B; --a-solid: #2B5560; --a-on: #FFFFFF;
+
+  --font: 'BIZ UDPGothic', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1216;
+    --surface: #171D23;
+    --ink: #F1F5F9;
+    --ink-2: #B6C2CE;
+    --line: #5A6775;
+    --focus: #FFD60A;
+
+    --h-bg: #10304F; --h-ink: #E8F2FF; --h-edge: #6DB0FF; --h-solid: #6DB0FF; --h-on: #04182C;
+    --d-bg: #47260A; --d-ink: #FFEBD2; --d-edge: #F5A524; --d-solid: #F5A524; --d-on: #2A1500;
+    --a-bg: #1F2C31; --a-ink: #E8F2F4; --a-edge: #8DB6C0; --a-solid: #8DB6C0; --a-on: #0A1A1E;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1216;
+  --surface: #171D23;
+  --ink: #F1F5F9;
+  --ink-2: #B6C2CE;
+  --line: #5A6775;
+  --focus: #FFD60A;
+
+  --h-bg: #10304F; --h-ink: #E8F2FF; --h-edge: #6DB0FF; --h-solid: #6DB0FF; --h-on: #04182C;
+  --d-bg: #47260A; --d-ink: #FFEBD2; --d-edge: #F5A524; --d-solid: #F5A524; --d-on: #2A1500;
+  --a-bg: #1F2C31; --a-ink: #E8F2F4; --a-edge: #8DB6C0; --a-solid: #8DB6C0; --a-on: #0A1A1E;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 1.5;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+button, textarea { font-family: inherit; }
+:focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; }
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* 役割ごとの色 */
+.r-h, [data-role="h"] { --edge: var(--h-edge); --tint: var(--h-bg); --tx: var(--h-ink); --solid: var(--h-solid); --on: var(--h-on); }
+.r-d, [data-role="d"] { --edge: var(--d-edge); --tint: var(--d-bg); --tx: var(--d-ink); --solid: var(--d-solid); --on: var(--d-on); }
+.r-a, [data-role="a"] { --edge: var(--a-edge); --tint: var(--a-bg); --tx: var(--a-ink); --solid: var(--a-solid); --on: var(--a-on); }
+
+/* 上部バー */
+.top { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 1 auto; min-width: 0; font-size: 1.15rem; font-weight: 700; }
+.brand svg { flex: none; }
+.quiet {
+  min-height: 48px; padding: 0 14px; cursor: pointer;
+  border: 2px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700;
+}
+.quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
+
+/* 2分割 */
+.stage { flex: 1 1 auto; min-height: 0; display: grid; gap: 10px; grid-template-rows: minmax(0, 5fr) minmax(0, 6fr); }
+@media (min-aspect-ratio: 6/5) {
+  .stage { grid-template-rows: none; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+}
+
+/* 表示カード */
+.card {
+  --edge: var(--line); --tint: var(--surface); --tx: var(--ink);
+  display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0;
+  padding: 12px 16px 14px;
+  border: 6px solid var(--edge); border-radius: 10px;
+  background: var(--tint); color: var(--tx);
+}
+.who { display: flex; align-items: center; gap: 8px; flex: none; font-weight: 700; font-size: 1.05rem; }
+.mark { width: 14px; height: 14px; flex: none; background: var(--edge); }
+.card[data-role="h"] .mark { border-radius: 50%; }
+.card[data-role="d"] .mark { transform: rotate(45deg) scale(.85); }
+.card[data-role="e"] .mark { background: transparent; border: 3px solid var(--edge); }
+.hist { flex: none; margin: 0; padding: 0; list-style: none; font-size: .95rem; }
+.hist li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist:empty { display: none; }
+.msgbox { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; overflow: hidden; }
+.arrow { flex: none; color: var(--tx); }
+.arrow svg { display: block; width: 100%; height: 100%; }
+.msg { flex: 1 1 0; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.msg-t {
+  display: block; width: 100%; text-align: center; font-weight: 700; line-height: 1.3;
+  white-space: pre-line; overflow-wrap: anywhere; word-break: auto-phrase; text-wrap: balance;
+}
+.card[data-role="e"] .msg-t { font-size: clamp(1.25rem, 5vmin, 2.2rem); font-weight: 400; }
+.empty-actions { flex: none; display: flex; justify-content: center; }
+.try {
+  min-height: 52px; padding: 0 20px; cursor: pointer;
+  border: 3px solid var(--d-edge); border-radius: 6px;
+  background: var(--d-bg); color: var(--d-ink); font-size: 1.05rem; font-weight: 700;
+}
+
+/* ボタン側 */
+.pad { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: none; }
+.role-btn {
+  min-height: 52px; padding: 6px 4px; cursor: pointer; line-height: 1.2;
+  border: 3px solid var(--edge); border-radius: 6px;
+  background: var(--tint); color: var(--tx); font-size: 1rem; font-weight: 700;
+}
+.role-btn[aria-pressed="true"] { background: var(--solid); color: var(--on); }
+.role-btn[aria-pressed="true"]::before { content: "✓ "; }
+
+.list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 8px; }
+.grp h2 { margin: 0 0 6px; font-size: .95rem; font-weight: 700; color: var(--ink-2); }
+.btns { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); }
+.say {
+  min-height: 56px; padding: 10px 14px; text-align: left; cursor: pointer;
+  border: 3px solid var(--edge); border-radius: 6px;
+  background: var(--tint); color: var(--tx); font-size: 1.05rem; font-weight: 700; line-height: 1.35;
+}
+.say:active { background: var(--solid); color: var(--on); }
+.sug { padding: 10px; border: 3px solid var(--ink); border-radius: 8px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+.sug h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+
+/* 方向で案内 */
+.dir { display: flex; flex-direction: column; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  min-height: 44px; padding: 0 14px; cursor: pointer;
+  border: 2px solid var(--edge); border-radius: 22px;
+  background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700;
+}
+.chip[aria-pressed="true"] { background: var(--solid); color: var(--on); border-color: var(--solid); }
+.chip[aria-pressed="true"]::before { content: "✓ "; }
+.arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.abtn {
+  min-height: 76px; padding: 6px 2px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 3px solid var(--edge); border-radius: 6px;
+  background: var(--tint); color: var(--tx); font-size: .95rem; font-weight: 700; line-height: 1.2;
+}
+.abtn:active { background: var(--solid); color: var(--on); }
+.abtn .ico { display: block; width: 34px; height: 34px; }
+.abtn .ico svg { display: block; width: 100%; height: 100%; }
+
+/* 自由入力 */
+.free { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.free-toggle {
+  min-height: 52px; cursor: pointer;
+  border: 3px solid var(--ink); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font-size: 1.05rem; font-weight: 700;
+}
+.free-box { display: flex; flex-direction: column; gap: 6px; }
+.free-box label { font-size: .95rem; font-weight: 700; }
+.free-row { display: flex; gap: 6px; }
+.free-row textarea {
+  flex: 1 1 auto; min-width: 0; min-height: 56px; padding: 8px 10px; resize: none;
+  border: 3px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font-size: 1.15rem; line-height: 1.4;
+}
+.free-row button {
+  flex: none; min-height: 56px; padding: 0 16px; cursor: pointer;
+  border: 3px solid var(--ink); border-radius: 6px;
+  background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700;
+}
+
+@media (max-height: 440px) {
+  .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .role-btn { min-height: 46px; }
+  .say { min-height: 52px; }
+  .card { padding: 8px 12px 10px; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 class="brand">
+    <svg width="34" height="28" viewBox="0 0 34 28" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="20" height="14" rx="3" fill="var(--h-solid)"/>
+      <path d="M5 15l-1 6 7-6z" fill="var(--h-solid)"/>
+      <rect x="13" y="11" width="20" height="14" rx="3" fill="var(--d-solid)"/>
+      <path d="M29 25l1 3-7-3z" fill="var(--d-solid)"/>
+    </svg>
+    <span class="brand-name">ひと目トーク</span>
+  </h1>
+  <button type="button" class="quiet" id="undo">ひとつ戻す</button>
+  <button type="button" class="quiet" id="clear">全部消す</button>
+</header>
+
+<main class="stage">
+  <section class="card" id="card" data-role="e" aria-label="表示画面">
+    <div class="who"><span class="mark" aria-hidden="true"></span><span id="whoText">はじめに</span></div>
+    <ul class="hist" id="hist" aria-label="これまでのやりとり"></ul>
+    <div class="msgbox" id="msgbox">
+      <div class="arrow" id="arrow" hidden></div>
+      <div class="msg" id="msg"><span class="msg-t" id="msgt"></span></div>
+    </div>
+    <div class="empty-actions" id="emptyActions">
+      <button type="button" class="try" id="try">ためしに「耳が聞こえません」を表示</button>
+    </div>
+  </section>
+
+  <section class="pad" aria-label="メッセージを選ぶ">
+    <div class="roles" role="group" aria-label="だれが伝えますか">
+      <button type="button" class="role-btn r-h" data-tab="h" data-key="role:h" aria-pressed="false">聞こえる人</button>
+      <button type="button" class="role-btn r-d" data-tab="d" data-key="role:d" aria-pressed="true">聞こえない人</button>
+      <button type="button" class="role-btn r-a" data-tab="a" data-key="role:a" aria-pressed="false">どちらでも</button>
+    </div>
+    <div class="list" id="list" tabindex="-1"></div>
+    <div class="free">
+      <button type="button" class="free-toggle" id="freeToggle" aria-expanded="false" aria-controls="freeBox">文字を入力して表示</button>
+      <div class="free-box" id="freeBox" hidden>
+        <label for="free">文字を入力（<span id="freeAs"></span>として表示）</label>
+        <div class="free-row">
+          <textarea id="free" rows="2" maxlength="100" autocomplete="off"></textarea>
+          <button type="button" id="freeSend">大きく表示</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="sr" id="sr" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v == null || v === false) return;
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.indexOf('on') === 0) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = [].concat(arguments[i]);
+      for (var j = 0; j < kids.length; j++) {
+        var c = kids[j];
+        if (c == null) continue;
+        n.append(c.nodeType ? c : document.createTextNode(c));
+      }
+    }
+    return n;
+  }
+
+  var ARROW = '<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M8 40h50V16l34 34-34 34V60H8z" fill="currentColor"/></svg>';
+
+  var ROLE = {
+    h: { from: '聞こえる人より', short: '聞こえる人' },
+    d: { from: '聞こえない人より', short: '聞こえない人' },
+    a: { from: '返事', short: '返事' }
+  };
+
+  /* 定型文。r=話す人(h:聞こえる人 d:聞こえない人 a:どちらでも)、next=このあとの返事の候補 */
+  var SIT_NEXT = ['d_where', 'd_danger', 'd_when', 'ok'];
+  var MSG = {
+    /* 聞こえない人から */
+    d_intro:   { r: 'd', t: '耳が聞こえません。画面で教えてください。', next: ['h_stop', 'h_quake', 'h_fire', 'h_power', 'h_safe', 'h_unknown', 'tool:free'] },
+    d_nospeak: { r: 'd', t: '声で話せません。画面とボタンで答えます。', next: ['tool:free', 'h_ok_q', 'h_help_q'] },
+    d_nosign:  { r: 'd', t: '手話は使えません。文字でお願いします。', next: ['tool:free', 'h_ok_q', 'h_help_q'] },
+    d_what:    { r: 'd', t: '何が起きましたか？', next: ['h_quake', 'h_fire', 'h_stop', 'h_power', 'h_safe', 'h_unknown'] },
+    d_danger:  { r: 'd', t: '危険ですか？', next: ['h_danger', 'h_safe', 'h_unknown'] },
+    d_where:   { r: 'd', t: 'どこへ逃げればいいですか？', next: ['tool:dir', 'h_follow', 'h_wait', 'h_unknown'] },
+    d_exit:    { r: 'd', t: '出口はどこですか？', next: ['tool:dir', 'h_follow'] },
+    d_when:    { r: 'd', t: 'いつ動きますか？', next: ['h_resume', 'h_staff', 'h_unknown', 'h_check'] },
+    d_announce:{ r: 'd', t: '放送は何と言っていますか？', next: ['tool:free', 'h_unknown'] },
+    d_stay:    { r: 'd', t: '一緒にいてください。', next: ['h_stay'] },
+    d_staff:   { r: 'd', t: '係員を呼んでください。', next: ['h_calling', 'h_wait'] },
+    d_amb:     { r: 'd', t: '救急車をお願いします。', next: ['h_calling'] },
+    d_guide:   { r: 'd', t: '案内してください。', next: ['h_follow', 'tool:dir'] },
+    d_hurt:    { r: 'd', t: 'ケガをしています。', next: ['h_calling', 'h_help_q', 'tool:free'] },
+    d_sick:    { r: 'd', t: '具合が悪いです。', next: ['h_calling', 'h_help_q', 'tool:free'] },
+
+    /* 聞こえる人から */
+    h_quake:   { r: 'h', t: '地震です。', next: SIT_NEXT },
+    h_fire:    { r: 'h', t: '火事です。煙に気をつけてください。', next: SIT_NEXT },
+    h_stop:    { r: 'h', t: '電車が止まっています。', next: SIT_NEXT },
+    h_power:   { r: 'h', t: '停電です。', next: SIT_NEXT },
+    h_acc:     { r: 'h', t: '事故がありました。', next: SIT_NEXT },
+    h_flood:   { r: 'h', t: '大雨で、浸水のおそれがあります。', next: SIT_NEXT },
+    h_danger:  { r: 'h', t: '危険です。すぐ避難します。', next: ['ok', 'unk', 'd_where'] },
+    h_safe:    { r: 'h', t: '危険はありません。落ち着いてください。', next: ['ok', 'thanks', 'd_when'] },
+    h_unknown: { r: 'h', t: 'まだ原因は分かりません。', next: ['ok', 'd_staff', 'd_stay'] },
+    h_wait:    { r: 'h', t: 'ここで待ってください。', next: ['ok', 'd_when', 'd_stay'] },
+    h_follow:  { r: 'h', t: 'ついてきてください。', next: ['ok', 'unk', 'd_hurt'] },
+    h_evac:    { r: 'h', t: '一緒に避難しましょう。', next: ['ok', 'd_hurt'] },
+    h_head:    { r: 'h', t: '頭を守って、低い姿勢になってください。', next: ['ok', 'unk'] },
+    h_smoke:   { r: 'h', t: '口と鼻をおおって、低い姿勢で進んでください。', next: ['ok', 'unk'] },
+    h_stairs:  { r: 'h', t: '階段で降ります。エレベーターは使いません。', next: ['ok', 'unk', 'd_guide'] },
+    h_calm:    { r: 'h', t: 'あわてず、ゆっくり歩いてください。', next: ['ok', 'unk'] },
+    h_staff:   { r: 'h', t: '係員が来ます。ここで待ってください。', next: ['ok', 'd_when'] },
+    h_calling: { r: 'h', t: '呼びます。ここで待ってください。', next: ['ok', 'thanks'] },
+    h_resume:  { r: 'h', t: '再開の時間は、まだ分かりません。', next: ['ok', 'd_staff', 'thanks'] },
+    h_check:   { r: 'h', t: '確認してきます。少し待ってください。', next: ['ok'] },
+    h_stay:    { r: 'h', t: '一緒にいます。', next: ['thanks', 'ok'] },
+    h_ok_q:    { r: 'h', t: '大丈夫ですか？', next: ['fine', 'd_hurt', 'd_sick', 'help_need'] },
+    h_hurt_q:  { r: 'h', t: 'ケガはありませんか？', next: ['fine', 'd_hurt', 'unk'] },
+    h_help_q:  { r: 'h', t: 'お手伝いしましょうか？', next: ['help_need', 'no_help', 'd_guide'] },
+    h_amb_q:   { r: 'h', t: '救急車を呼びますか？', next: ['yes', 'no'] },
+
+    /* どちらでも */
+    yes:       { r: 'a', t: 'はい' },
+    no:        { r: 'a', t: 'いいえ' },
+    ok:        { r: 'a', t: 'わかりました。' },
+    unk:       { r: 'a', t: 'わかりません。' },
+    thanks:    { r: 'a', t: 'ありがとうございます。' },
+    fine:      { r: 'a', t: 'ケガはありません。大丈夫です。' },
+    help_need: { r: 'a', t: '助けが必要です。' },
+    no_help:   { r: 'a', t: '助けは大丈夫です。' },
+    again:     { r: 'a', t: 'もう一度、お願いします。' },
+    short:     { r: 'a', t: '短い文字で、お願いします。' },
+    wait_a:    { r: 'a', t: '少し待ってください。' }
+  };
+
+  var GROUPS = {
+    h: [
+      { t: '状況を知らせる', ids: ['h_quake', 'h_fire', 'h_stop', 'h_power', 'h_acc', 'h_flood', 'h_danger', 'h_safe', 'h_unknown'] },
+      { t: 'してほしいこと', ids: ['h_wait', 'h_follow', 'h_evac', 'h_head', 'h_smoke', 'h_stairs', 'h_calm'] },
+      { t: '方向で案内する', tool: 'dir' },
+      { t: '見通し・連絡', ids: ['h_staff', 'h_calling', 'h_resume', 'h_check', 'h_stay'] },
+      { t: '確認する', ids: ['h_ok_q', 'h_hurt_q', 'h_help_q', 'h_amb_q'] }
+    ],
+    d: [
+      { t: 'まず伝える', ids: ['d_intro', 'd_nospeak', 'd_nosign'] },
+      { t: '質問する', ids: ['d_what', 'd_danger', 'd_where', 'd_exit', 'd_when', 'd_announce'] },
+      { t: 'お願いする', ids: ['d_stay', 'd_staff', 'd_amb', 'd_guide', 'd_hurt', 'd_sick'] }
+    ],
+    a: [
+      { t: '返事', ids: ['yes', 'no', 'ok', 'unk', 'thanks'] },
+      { t: '状態', ids: ['fine', 'help_need', 'no_help'] },
+      { t: 'やりとりのお願い', ids: ['again', 'short', 'wait_a'] },
+      { t: '方向で伝える', tool: 'dir' }
+    ]
+  };
+
+  var TARGETS = ['出口', '階段', '係員', '安全な場所', '避難所'];
+  var DIRS = [
+    { k: 'left',  w: '左',       rot: 180 },
+    { k: 'up',    w: 'まっすぐ', rot: -90 },
+    { k: 'down',  w: 'うしろ',   rot: 90 },
+    { k: 'right', w: '右',       rot: 0 }
+  ];
+
+  var S = { tab: 'd', hist: [], sug: [], target: '出口', freeOpen: false };
+
+  function tabFor(id) {
+    if (id.indexOf('tool:') === 0) return 'h';
+    return MSG[id].r;
+  }
+  function oneLine(t) { return t.replace(/\s+/g, ''); }
+  function display(t) { return t.replace(/。(?!\s*$)/g, '。\n'); }
+
+  /* ---- 操作 ---- */
+  function say(role, text, o) {
+    o = o || {};
+    S.hist.push({ role: role, text: text, dir: o.dir || null });
+    S.sug = (o.next || []).slice();
+    if (S.sug.length) S.tab = tabFor(S.sug[0]);
+    render(true);
+  }
+  function pick(id) {
+    var m = MSG[id];
+    say(m.r, m.t, { next: m.next });
+  }
+  function sayDir(role, d) {
+    say(role, S.target + 'は\n' + d.w + 'です', { dir: d, next: ['ok', 'unk', 'thanks'] });
+  }
+  function openFree(role) {
+    S.tab = role;
+    setFree(true);
+    render(false);
+    $('#free').focus();
+  }
+  function setFree(open) {
+    S.freeOpen = open;
+    $('#freeBox').hidden = !open;
+    var tg = $('#freeToggle');
+    tg.setAttribute('aria-expanded', String(open));
+    tg.textContent = open ? '文字入力をとじる' : '文字を入力して表示';
+  }
+
+  /* ---- 部品 ---- */
+  function sayBtn(id, pre) {
+    var m = MSG[id];
+    return el('button', { type: 'button', class: 'say r-' + m.r, 'data-key': pre + id, onclick: function () { pick(id); } }, m.t);
+  }
+
+  function updateTargetUI() {
+    document.querySelectorAll('.chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', String(c.getAttribute('data-t') === S.target));
+    });
+    document.querySelectorAll('.arrows').forEach(function (a) {
+      a.setAttribute('aria-label', '「' + S.target + '」の方向を知らせる');
+    });
+  }
+
+  function dirTool(role, pre) {
+    var chips = el('div', { class: 'chips', role: 'group', 'aria-label': '何を案内しますか' });
+    TARGETS.forEach(function (t) {
+      chips.append(el('button', {
+        type: 'button', class: 'chip', 'data-t': t, 'data-key': pre + 't:' + t,
+        'aria-pressed': String(S.target === t),
+        onclick: function () { S.target = t; updateTargetUI(); }
+      }, t));
+    });
+    var arrows = el('div', { class: 'arrows', role: 'group', 'aria-label': '「' + S.target + '」の方向を知らせる' });
+    DIRS.forEach(function (d) {
+      var ico = el('span', { class: 'ico', 'aria-hidden': 'true' });
+      ico.innerHTML = ARROW;
+      ico.style.transform = 'rotate(' + d.rot + 'deg)';
+      arrows.append(el('button', {
+        type: 'button', class: 'abtn', 'data-key': pre + 'd:' + d.k,
+        onclick: function () { sayDir(role, d); }
+      }, ico, el('span', { text: d.w })));
+    });
+    return el('div', { class: 'dir r-' + role }, chips, arrows);
+  }
+
+  function group(g) {
+    var body = g.tool === 'dir'
+      ? dirTool(S.tab, 'l:')
+      : el('div', { class: 'btns' }, g.ids.map(function (id) { return sayBtn(id, 'l:'); }));
+    return el('section', { class: 'grp' }, el('h2', { text: g.t }), body);
+  }
+
+  function sugBlock() {
+    var btns = [];
+    var tools = [];
+    S.sug.forEach(function (id) {
+      if (id === 'tool:dir') {
+        tools.push(el('div', {}, el('div', { class: 'sr', text: '方向で案内する' }), dirTool('h', 's:')));
+      } else if (id === 'tool:free') {
+        btns.push(el('button', {
+          type: 'button', class: 'say r-h', 'data-key': 's:free',
+          onclick: function () { openFree('h'); }
+        }, '文字を書いて伝える'));
+      } else {
+        btns.push(sayBtn(id, 's:'));
+      }
+    });
+    return el('section', { class: 'sug' },
+      el('h2', { text: '返事の候補' }),
+      btns.length ? el('div', { class: 'btns' }, btns) : null,
+      tools);
+  }
+
+  /* ---- 描画 ---- */
+  function renderCard() {
+    var last = S.hist[S.hist.length - 1];
+    var card = $('#card');
+    var role = last ? last.role : 'e';
+    card.setAttribute('data-role', role);
+    $('#whoText').textContent = last ? ROLE[role].from : 'はじめに';
+
+    var hist = $('#hist');
+    hist.replaceChildren();
+    S.hist.slice(-3, -1).forEach(function (h) {
+      hist.append(el('li', { text: ROLE[h.role].short + '：' + oneLine(h.text) }));
+    });
+
+    var t = $('#msgt');
+    t.textContent = last ? display(last.text) : 'ボタンを押すと、\nここに大きく表示されます。\n画面を相手に見せてください。';
+    $('#emptyActions').hidden = !!last;
+    if (last) $('#sr').textContent = ROLE[role].from + '：' + oneLine(last.text);
+
+    $('#arrow').innerHTML = last && last.dir ? ARROW : '';
+    if (last && last.dir) {
+      $('#arrow').style.transform = 'rotate(' + last.dir.rot + 'deg)';
+    } else {
+      $('#arrow').style.transform = '';
+    }
+    $('#undo').disabled = !S.hist.length;
+    $('#clear').disabled = !S.hist.length;
+    fit();
+  }
+
+  function fit() {
+    var last = S.hist[S.hist.length - 1];
+    var box = $('#msgbox'), arrow = $('#arrow'), msg = $('#msg'), t = $('#msgt');
+    if (!last) {
+      arrow.hidden = true;
+      t.style.fontSize = '';
+      return;
+    }
+    var W = box.clientWidth, H = box.clientHeight;
+    if (last.dir) {
+      var s = Math.max(40, Math.min(H * 0.52, W * 0.6));
+      arrow.style.width = s + 'px';
+      arrow.style.height = s + 'px';
+      arrow.hidden = false;
+    } else {
+      arrow.hidden = true;
+    }
+    var lo = 16, hi = 320;
+    while (hi - lo > 1) {
+      var mid = Math.floor((lo + hi) / 2);
+      t.style.fontSize = mid + 'px';
+      if (t.offsetHeight <= msg.clientHeight + 1 && t.scrollWidth <= msg.clientWidth + 1) lo = mid;
+      else hi = mid;
+    }
+    t.style.fontSize = lo + 'px';
+  }
+
+  function renderPad() {
+    var list = $('#list');
+    list.replaceChildren();
+    if (S.sug.length) list.append(sugBlock());
+    GROUPS[S.tab].forEach(function (g) { list.append(group(g)); });
+    document.querySelectorAll('.role-btn').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-tab') === S.tab));
+    });
+    $('#freeAs').textContent = '「' + ROLE[S.tab].short + '」';
+  }
+
+  function render(resetScroll) {
+    var list = $('#list');
+    var ae = document.activeElement;
+    var key = ae && list.contains(ae) ? ae.getAttribute('data-key') : null;
+    renderCard();
+    renderPad();
+    if (resetScroll) list.scrollTop = 0;
+    if (key) {
+      var n = null;
+      document.querySelectorAll('#list [data-key]').forEach(function (x) {
+        if (x.getAttribute('data-key') === key) n = x;
+      });
+      (n || $('#list .say') || $('.role-btn[aria-pressed="true"]')).focus({ preventScroll: true });
+    }
+  }
+
+  /* ---- イベント ---- */
+  document.querySelectorAll('.role-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      S.tab = b.getAttribute('data-tab');
+      render(true);
+    });
+  });
+  $('#undo').addEventListener('click', function () {
+    S.hist.pop();
+    S.sug = [];
+    render(true);
+  });
+  $('#clear').addEventListener('click', function () {
+    S.hist = [];
+    S.sug = [];
+    render(true);
+  });
+  $('#try').addEventListener('click', function () { pick('d_intro'); });
+  $('#freeToggle').addEventListener('click', function () {
+    setFree(!S.freeOpen);
+    if (S.freeOpen) $('#free').focus();
+  });
+  $('#freeSend').addEventListener('click', function () {
+    var ta = $('#free');
+    var v = ta.value.trim();
+    if (!v) { ta.focus(); return; }
+    ta.value = '';
+    setFree(false);
+    var next = S.tab === 'h' ? ['ok', 'unk', 'again']
+             : S.tab === 'd' ? ['yes', 'no', 'unk', 'tool:free']
+             : [];
+    say(S.tab, v, { next: next });
+  });
+
+  new ResizeObserver(function () { fit(); }).observe($('#msgbox'));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+  /* 画面を消さない（使えない環境では何もしない） */
+  var wl = null;
+  function lock() {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible' && !wl) {
+        navigator.wakeLock.request('screen').then(function (l) {
+          wl = l;
+          l.addEventListener('release', function () { wl = null; });
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+  document.addEventListener('pointerdown', lock);
+  document.addEventListener('visibilitychange', lock);
+
+  render(false);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
