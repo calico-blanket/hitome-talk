@@ -217,11 +217,6 @@ button, textarea { font-family: inherit; }
   .say { min-height: 52px; }
   .card { padding: 8px 12px 10px; }
 }
-
-/* 確認用の表示(一時的。「はじめに」の見出しを5回続けてタップ、または ?debug で出る) */
-.dbg { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 10; padding: 8px; border: 3px solid var(--ink); border-radius: 8px; background: var(--surface); color: var(--ink); }
-.dbg pre { margin: 0 0 8px; font: 12px/1.4 monospace; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
-.dbg button { min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -273,11 +268,6 @@ button, textarea { font-family: inherit; }
 </main>
 
 <div class="sr" id="sr" role="status" aria-live="polite"></div>
-
-<div class="dbg" id="dbg" hidden>
-  <pre id="dbgText"></pre>
-  <button type="button" id="dbgClose">とじる</button>
-</div>
 
 <script>
 (function () {
@@ -664,38 +654,6 @@ button, textarea { font-family: inherit; }
   }
   document.addEventListener('pointerdown', lock);
   document.addEventListener('visibilitychange', lock);
-
-  /* 確認用の表示(一時的) */
-  function showDebug() {
-    var cs = function (el) { return getComputedStyle(el); };
-    var brand = $('.brand'), name = $('.brand-name'), logo = brand.querySelector('svg');
-    var vv = window.visualViewport;
-    var lines = [
-      '画面の幅x高さ(CSS px): ' + innerWidth + ' x ' + innerHeight,
-      '端末の画面(CSS px): ' + screen.width + ' x ' + screen.height,
-      '表示の倍率 devicePixelRatio: ' + devicePixelRatio,
-      '文字の基準(rem)px: ' + cs(document.documentElement).fontSize,
-      'ピンチ拡大率: ' + (vv ? vv.scale : '-'),
-      'アプリ表示(standalone): ' + matchMedia('(display-mode: standalone)').matches,
-      '上部バー: 見出し ' + cs(brand).fontSize + ' / 見出しの文字 ' + (name.classList.contains('sr') ? '隠す' : 'あり') +
-        ' / ロゴ ' + (logo.style.display === 'none' ? '隠す' : 'あり') + ' / ボタン詰め ' + $('.top').classList.contains('compact'),
-      '上部バーの幅: 全体 ' + $('.top').clientWidth + ' / ボタン組 ' + $('.acts').offsetWidth + ' / ロゴ+見出し ' + brand.offsetWidth,
-      '機種: ' + navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 90)
-    ];
-    $('#dbgText').textContent = lines.join('\n');
-    $('#dbg').hidden = false;
-  }
-  $('#dbgClose').addEventListener('click', function () { $('#dbg').hidden = true; });
-  (function () {
-    var n = 0, t = 0;
-    $('.who').addEventListener('click', function () {
-      var now = Date.now();
-      n = now - t < 1500 ? n + 1 : 1;
-      t = now;
-      if (n >= 5) { n = 0; showDebug(); }
-    });
-  })();
-  if (/[?&]debug/.test(location.search)) showDebug();
 
   render(false);
   fitHeader();
