@@ -99,6 +99,7 @@ button, textarea { font-family: inherit; }
 }
 /* 2つのボタンは組にして、収まらないときは一緒に次の行へ回す */
 .acts { display: flex; gap: 8px; margin-left: auto; }
+.top.compact .quiet { padding: 0 6px; font-size: .8rem; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
 /* 2分割 */
@@ -605,25 +606,29 @@ button, textarea { font-family: inherit; }
     say(S.tab, v, { next: next });
   });
 
-  /* 上部バーを必ず1行に収める: 見出しを縮める → ロゴ図形を隠す → 見出しの文字を読み上げ専用にする */
+  /* 上部バーを必ず1行に収める。残す順: ロゴ+見出し → ボタンを詰めてロゴ+見出し → 見出しだけ → ロゴだけ */
   function fitHeader() {
-    var brand = $('.brand'), name = $('.brand-name'), acts = $('.acts');
+    var top = $('.top'), brand = $('.brand'), name = $('.brand-name'), acts = $('.acts');
     var logo = brand.querySelector('svg');
+    top.classList.remove('compact');
     name.classList.remove('sr');
     logo.style.display = '';
     brand.style.fontSize = '';
     var base = parseFloat(getComputedStyle(brand).fontSize);
     function oneRow() { return acts.offsetTop < brand.offsetTop + brand.offsetHeight; }
     function shrink() {
-      for (var px = base; px >= 13; px -= 0.5) {
+      for (var px = base; px >= 12; px -= 0.5) {
         brand.style.fontSize = px + 'px';
         if (oneRow()) return true;
       }
       return oneRow();
     }
     if (shrink()) return;
+    top.classList.add('compact');
+    if (shrink()) return;
     logo.style.display = 'none';
     if (shrink()) return;
+    logo.style.display = '';
     name.classList.add('sr');
   }
   window.addEventListener('resize', fitHeader);
