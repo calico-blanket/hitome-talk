@@ -535,13 +535,8 @@ button, textarea { font-family: inherit; }
   function fit() {
     var last = S.hist[S.hist.length - 1];
     var box = $('#msgbox'), arrow = $('#arrow'), msg = $('#msg'), t = $('#msgt');
-    if (!last) {
-      arrow.hidden = true;
-      t.style.fontSize = '';
-      return;
-    }
     var W = box.clientWidth, H = box.clientHeight;
-    if (last.dir) {
+    if (last && last.dir) {
       var s = Math.max(40, Math.min(H * 0.52, W * 0.6));
       arrow.style.width = s + 'px';
       arrow.style.height = s + 'px';
@@ -549,7 +544,8 @@ button, textarea { font-family: inherit; }
     } else {
       arrow.hidden = true;
     }
-    var lo = 16, hi = 320;
+    /* はじめの案内文も枠に収める(上限だけ小さくする) */
+    var lo = 12, hi = last ? 320 : 36;
     while (hi - lo > 1) {
       var mid = Math.floor((lo + hi) / 2);
       t.style.fontSize = mid + 'px';
