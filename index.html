@@ -99,7 +99,11 @@ button, textarea { font-family: inherit; }
 }
 /* 2つのボタンは組にして、収まらないときは一緒に次の行へ回す */
 .acts { display: flex; gap: 8px; margin-left: auto; }
-.top.compact .quiet { padding: 0 6px; font-size: .8rem; }
+/* ボタンを詰める段階: 幅が295px前後の端末(Chromeのズームが大きい)でもロゴ+見出しを残す */
+.top.compact .quiet { padding: 0 4px; font-size: .8rem; }
+.top.compact .acts { gap: 4px; }
+.top.compact .brand { gap: 6px; }
+.top.compact .brand svg { width: 26px; height: auto; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
 /* 2分割 */
