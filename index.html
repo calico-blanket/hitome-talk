@@ -89,14 +89,16 @@ button, textarea { font-family: inherit; }
 .r-a, [data-role="a"] { --edge: var(--a-edge); --tint: var(--a-bg); --tx: var(--a-ink); --solid: var(--a-solid); --on: var(--a-on); }
 
 /* 上部バー */
-.top { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
-.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 1 auto; min-width: 0; font-size: 1.15rem; font-weight: 700; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 0 auto; font-size: 1.15rem; font-weight: 700; }
 .brand svg { flex: none; }
 .quiet {
   min-height: 48px; padding: 0 14px; cursor: pointer;
   border: 2px solid var(--line); border-radius: 6px;
   background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700;
 }
+/* 2つのボタンは組にして、収まらないときは一緒に次の行へ回す */
+.acts { display: flex; gap: 8px; margin-left: auto; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
 /* 2分割 */
@@ -130,12 +132,6 @@ button, textarea { font-family: inherit; }
   white-space: pre-line; overflow-wrap: anywhere; word-break: auto-phrase; text-wrap: balance;
 }
 .card[data-role="e"] .msg-t { font-size: clamp(1.25rem, 5vmin, 2.2rem); font-weight: 400; }
-.empty-actions { flex: none; display: flex; justify-content: center; }
-.try {
-  min-height: 52px; padding: 0 20px; cursor: pointer;
-  border: 3px solid var(--d-edge); border-radius: 6px;
-  background: var(--d-bg); color: var(--d-ink); font-size: 1.05rem; font-weight: 700;
-}
 
 /* ボタン側 */
 .pad { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
@@ -206,14 +202,10 @@ button, textarea { font-family: inherit; }
 .brand-name { white-space: nowrap; }
 @media (max-width: 480px) {
   .quiet { padding: 0 10px; font-size: .95rem; white-space: nowrap; }
-  .brand { font-size: 1rem; gap: 8px; }
+  .brand { font-size: .9rem; gap: 8px; }
   .sug { padding: 8px; }
   .free-toggle { min-height: 48px; }
 }
-@media (max-width: 359px) {
-  .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-}
-
 @media (max-height: 440px) {
   .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .role-btn { min-height: 46px; }
@@ -234,8 +226,10 @@ button, textarea { font-family: inherit; }
     </svg>
     <span class="brand-name">ひと目トーク</span>
   </h1>
-  <button type="button" class="quiet" id="undo">ひとつ戻す</button>
-  <button type="button" class="quiet" id="clear">全部消す</button>
+  <div class="acts">
+    <button type="button" class="quiet" id="undo">ひとつ戻す</button>
+    <button type="button" class="quiet" id="clear">全部消す</button>
+  </div>
 </header>
 
 <main class="stage">
@@ -245,9 +239,6 @@ button, textarea { font-family: inherit; }
     <div class="msgbox" id="msgbox">
       <div class="arrow" id="arrow" hidden></div>
       <div class="msg" id="msg"><span class="msg-t" id="msgt"></span></div>
-    </div>
-    <div class="empty-actions" id="emptyActions">
-      <button type="button" class="try" id="try">ためしに「耳が聞こえません」を表示</button>
     </div>
   </section>
 
@@ -518,7 +509,6 @@ button, textarea { font-family: inherit; }
 
     var t = $('#msgt');
     t.textContent = last ? display(last.text) : 'ボタンを押すと、\nここに大きく表示されます。\n画面を相手に見せてください。';
-    $('#emptyActions').hidden = !!last;
     if (last) $('#sr').textContent = ROLE[role].from + '：' + oneLine(last.text);
 
     $('#arrow').innerHTML = last && last.dir ? ARROW : '';
@@ -535,13 +525,8 @@ button, textarea { font-family: inherit; }
   function fit() {
     var last = S.hist[S.hist.length - 1];
     var box = $('#msgbox'), arrow = $('#arrow'), msg = $('#msg'), t = $('#msgt');
-    if (!last) {
-      arrow.hidden = true;
-      t.style.fontSize = '';
-      return;
-    }
     var W = box.clientWidth, H = box.clientHeight;
-    if (last.dir) {
+    if (last && last.dir) {
       var s = Math.max(40, Math.min(H * 0.52, W * 0.6));
       arrow.style.width = s + 'px';
       arrow.style.height = s + 'px';
@@ -549,7 +534,8 @@ button, textarea { font-family: inherit; }
     } else {
       arrow.hidden = true;
     }
-    var lo = 16, hi = 320;
+    /* はじめの案内文も枠に収める(上限だけ小さくする) */
+    var lo = 12, hi = last ? 320 : 36;
     while (hi - lo > 1) {
       var mid = Math.floor((lo + hi) / 2);
       t.style.fontSize = mid + 'px';
@@ -603,7 +589,6 @@ button, textarea { font-family: inherit; }
     S.sug = [];
     render(true);
   });
-  $('#try').addEventListener('click', function () { pick('d_intro'); });
   $('#freeToggle').addEventListener('click', function () {
     setFree(!S.freeOpen);
     if (S.freeOpen) $('#free').focus();
