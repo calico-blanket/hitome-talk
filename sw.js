@@ -1,5 +1,5 @@
 /* ひと目トーク service worker: 本体を事前キャッシュし、オフラインで起動する */
-var CACHE = 'hitome-talk-v5';
+var CACHE = 'hitome-talk-v6';
 var ASSETS = [
   './',
   './index.html',

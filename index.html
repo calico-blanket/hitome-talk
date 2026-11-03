@@ -89,14 +89,16 @@ button, textarea { font-family: inherit; }
 .r-a, [data-role="a"] { --edge: var(--a-edge); --tint: var(--a-bg); --tx: var(--a-ink); --solid: var(--a-solid); --on: var(--a-on); }
 
 /* 上部バー */
-.top { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
-.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 1 auto; min-width: 0; font-size: 1.15rem; font-weight: 700; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 0 auto; font-size: 1.15rem; font-weight: 700; }
 .brand svg { flex: none; }
 .quiet {
   min-height: 48px; padding: 0 14px; cursor: pointer;
   border: 2px solid var(--line); border-radius: 6px;
   background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700;
 }
+/* 2つのボタンは組にして、収まらないときは一緒に次の行へ回す */
+.acts { display: flex; gap: 8px; margin-left: auto; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
 /* 2分割 */
@@ -204,10 +206,6 @@ button, textarea { font-family: inherit; }
   .sug { padding: 8px; }
   .free-toggle { min-height: 48px; }
 }
-@media (max-width: 359px) {
-  .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-}
-
 @media (max-height: 440px) {
   .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .role-btn { min-height: 46px; }
@@ -228,8 +226,10 @@ button, textarea { font-family: inherit; }
     </svg>
     <span class="brand-name">ひと目トーク</span>
   </h1>
-  <button type="button" class="quiet" id="undo">ひとつ戻す</button>
-  <button type="button" class="quiet" id="clear">全部消す</button>
+  <div class="acts">
+    <button type="button" class="quiet" id="undo">ひとつ戻す</button>
+    <button type="button" class="quiet" id="clear">全部消す</button>
+  </div>
 </header>
 
 <main class="stage">
