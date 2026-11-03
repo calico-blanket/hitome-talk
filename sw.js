@@ -1,5 +1,5 @@
 /* ひと目トーク service worker: 本体を事前キャッシュし、オフラインで起動する */
-var CACHE = 'hitome-talk-v7';
+var CACHE = 'hitome-talk-v13';
 var ASSETS = [
   './',
   './index.html',
@@ -27,9 +27,19 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   /* 他オリジン(Googleフォント)は取りにいき、失敗したら何もしない = 端末の日本語フォントに切り替わる */
   if (url.origin !== location.origin) return;
-  e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(function (hit) {
-      return hit || fetch(req).catch(function () { return caches.match('./index.html'); });
-    })
-  );
+  /* ネットワーク優先: つながれば最新を出して保存し直す。3秒で取れない・失敗したら保存分(機内モードでも起動できる) */
+  var fromCache = function () {
+    return caches.match(req, { ignoreSearch: true }).then(function (hit) {
+      return hit || caches.match('./index.html');
+    });
+  };
+  var network = fetch(req).then(function (res) {
+    if (res.ok) {
+      var copy = res.clone();
+      caches.open(CACHE).then(function (c) { c.put(req, copy); });
+    }
+    return res;
+  });
+  var timeout = new Promise(function (_, reject) { setTimeout(reject, 3000); });
+  e.respondWith(Promise.race([network, timeout]).catch(fromCache));
 });

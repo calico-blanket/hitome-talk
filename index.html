@@ -99,6 +99,11 @@ button, textarea { font-family: inherit; }
 }
 /* 2つのボタンは組にして、収まらないときは一緒に次の行へ回す */
 .acts { display: flex; gap: 8px; margin-left: auto; }
+/* ボタンを詰める段階: 幅が295px前後の端末(Chromeのズームが大きい)でもロゴ+見出しを残す */
+.top.compact .quiet { padding: 0 4px; font-size: .8rem; }
+.top.compact .acts { gap: 4px; }
+.top.compact .brand { gap: 6px; }
+.top.compact .brand svg { width: 26px; height: auto; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
 /* 2分割 */
@@ -201,7 +206,7 @@ button, textarea { font-family: inherit; }
 /* 狭い縦長の画面: 上部バーを1行に収め、返事の一覧に高さを回す */
 .brand-name { white-space: nowrap; }
 @media (max-width: 480px) {
-  .quiet { padding: 0 10px; font-size: .95rem; white-space: nowrap; }
+  .quiet { padding: 0 8px; font-size: .95rem; white-space: nowrap; }
   .brand { font-size: .9rem; gap: 8px; }
   .sug { padding: 8px; }
   .free-toggle { min-height: 48px; }
@@ -605,8 +610,35 @@ button, textarea { font-family: inherit; }
     say(S.tab, v, { next: next });
   });
 
+  /* 上部バーを必ず1行に収める。残す順: ロゴ+見出し → ボタンを詰めてロゴ+見出し → 見出しだけ → ロゴだけ */
+  function fitHeader() {
+    var top = $('.top'), brand = $('.brand'), name = $('.brand-name'), acts = $('.acts');
+    var logo = brand.querySelector('svg');
+    top.classList.remove('compact');
+    name.classList.remove('sr');
+    logo.style.display = '';
+    brand.style.fontSize = '';
+    var base = parseFloat(getComputedStyle(brand).fontSize);
+    function oneRow() { return acts.offsetTop < brand.offsetTop + brand.offsetHeight; }
+    function shrink() {
+      for (var px = base; px >= 12; px -= 0.5) {
+        brand.style.fontSize = px + 'px';
+        if (oneRow()) return true;
+      }
+      return oneRow();
+    }
+    if (shrink()) return;
+    top.classList.add('compact');
+    if (shrink()) return;
+    logo.style.display = 'none';
+    if (shrink()) return;
+    logo.style.display = '';
+    name.classList.add('sr');
+  }
+  window.addEventListener('resize', fitHeader);
+
   new ResizeObserver(function () { fit(); }).observe($('#msgbox'));
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); fitHeader(); });
 
   /* 画面を消さない（使えない環境では何もしない） */
   var wl = null;
@@ -624,6 +656,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   render(false);
+  fitHeader();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
