@@ -130,12 +130,6 @@ button, textarea { font-family: inherit; }
   white-space: pre-line; overflow-wrap: anywhere; word-break: auto-phrase; text-wrap: balance;
 }
 .card[data-role="e"] .msg-t { font-size: clamp(1.25rem, 5vmin, 2.2rem); font-weight: 400; }
-.empty-actions { flex: none; display: flex; justify-content: center; }
-.try {
-  min-height: 52px; padding: 0 20px; cursor: pointer;
-  border: 3px solid var(--d-edge); border-radius: 6px;
-  background: var(--d-bg); color: var(--d-ink); font-size: 1.05rem; font-weight: 700;
-}
 
 /* ボタン側 */
 .pad { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
@@ -245,9 +239,6 @@ button, textarea { font-family: inherit; }
     <div class="msgbox" id="msgbox">
       <div class="arrow" id="arrow" hidden></div>
       <div class="msg" id="msg"><span class="msg-t" id="msgt"></span></div>
-    </div>
-    <div class="empty-actions" id="emptyActions">
-      <button type="button" class="try" id="try">ためしに「耳が聞こえません」を表示</button>
     </div>
   </section>
 
@@ -518,7 +509,6 @@ button, textarea { font-family: inherit; }
 
     var t = $('#msgt');
     t.textContent = last ? display(last.text) : 'ボタンを押すと、\nここに大きく表示されます。\n画面を相手に見せてください。';
-    $('#emptyActions').hidden = !!last;
     if (last) $('#sr').textContent = ROLE[role].from + '：' + oneLine(last.text);
 
     $('#arrow').innerHTML = last && last.dir ? ARROW : '';
@@ -599,7 +589,6 @@ button, textarea { font-family: inherit; }
     S.sug = [];
     render(true);
   });
-  $('#try').addEventListener('click', function () { pick('d_intro'); });
   $('#freeToggle').addEventListener('click', function () {
     setFree(!S.freeOpen);
     if (S.freeOpen) $('#free').focus();
