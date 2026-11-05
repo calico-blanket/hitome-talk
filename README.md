@@ -54,6 +54,7 @@
 画面左上のロゴ「ひと目トーク」を、**1.5 秒以内に 3 回続けて押す**と、「このアプリについて」の窓が開きます。災害時など、画面を見たいときに余計な情報が出ないよう、普段は隠しています。
 
 - **更新のお知らせ** … 直した内容の履歴（`changelog.html`）を、別のタブで開きます。
+- **権利・ライセンス** … 権利者と使っている部品（`license.html`）を、別のタブで開きます。
 - **ご意見・ふぐあいを送る** … ご意見フォームを、別のタブで開きます。アプリの表示内容は送られません。
 - 「とじる」で、元の画面にそのまま戻ります（表示中の言葉は消えません）。
 - キーボードや読み上げで操作するときは、ロゴを選んで 1 回押せば開きます。
@@ -70,8 +71,14 @@
 
 - `index.html` … 本体（HTML・CSS・JS）
 - `changelog.html` … 更新のお知らせ（改修したら、ここに書き足す）
+- `license.html` … 権利・ライセンスの案内ページ
+- `LICENSE` … PolyForm Noncommercial License 1.0.0（権利者: calico-blanket）
 - `manifest.webmanifest` / `icon.svg` / `icon-192.png` / `icon-512.png` … PWA 設定とアイコン
 - `sw.js` … オフライン用の service worker（更新したら `CACHE` のバージョンを上げる）
 - `docs/LESSONS.md` … 過去の失敗と教訓
+
+## ライセンス
+
+[PolyForm Noncommercial License 1.0.0](LICENSE)（営利目的でない利用は自由、商用利用は不可）。権利者は calico-blanket です。
 
 ビルド不要の静的サイトです。Vercel に配置しています。
