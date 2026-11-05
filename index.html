@@ -90,7 +90,9 @@ button, textarea { font-family: inherit; }
 
 /* 上部バー */
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 48px; }
-.brand { display: flex; align-items: center; gap: 10px; margin: 0; flex: 1 0 auto; font-size: 1.15rem; font-weight: 700; }
+.brand { margin: 0; flex: 1 0 auto; font-size: 1.15rem; font-weight: 700; }
+/* ロゴ+見出しは、3回続けて押すと「このアプリについて」が開く隠しボタン */
+.brand-btn { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; touch-action: manipulation; }
 .brand svg { flex: none; }
 .quiet {
   min-height: 48px; padding: 0 14px; cursor: pointer;
@@ -102,7 +104,7 @@ button, textarea { font-family: inherit; }
 /* ボタンを詰める段階: 幅が295px前後の端末(Chromeのズームが大きい)でもロゴ+見出しを残す */
 .top.compact .quiet { padding: 0 4px; font-size: .8rem; }
 .top.compact .acts { gap: 4px; }
-.top.compact .brand { gap: 6px; }
+.top.compact .brand-btn { gap: 6px; }
 .top.compact .brand svg { width: 26px; height: auto; }
 .quiet:disabled { cursor: default; color: var(--ink-2); border-style: dashed; }
 
@@ -207,7 +209,8 @@ button, textarea { font-family: inherit; }
 .brand-name { white-space: nowrap; }
 @media (max-width: 480px) {
   .quiet { padding: 0 8px; font-size: .95rem; white-space: nowrap; }
-  .brand { font-size: .9rem; gap: 8px; }
+  .brand { font-size: .9rem; }
+  .brand-btn { gap: 8px; }
   .sug { padding: 8px; }
   .free-toggle { min-height: 48px; }
 }
@@ -217,12 +220,24 @@ button, textarea { font-family: inherit; }
   .say { min-height: 52px; }
   .card { padding: 8px 12px 10px; }
 }
+
+/* このアプリについて(ダイアログ) */
+.about { width: min(92vw, 26rem); padding: 16px; border: 3px solid var(--ink); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.about::backdrop { background: rgba(0, 0, 0, .6); }
+.about h2 { margin: 0 0 4px; font-size: 1.25rem; }
+.about p { margin: 0 0 12px; }
+.about-ver { color: var(--ink-2); }
+.about-links { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.about-links a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-weight: 700; text-decoration: underline; }
+.about-note { font-size: .95rem; color: var(--ink-2); }
+.about-close { min-height: 48px; width: 100%; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <header class="top">
   <h1 class="brand">
+    <button type="button" class="brand-btn" id="about" aria-haspopup="dialog" aria-describedby="aboutHint">
     <svg width="34" height="28" viewBox="0 0 34 28" aria-hidden="true" focusable="false">
       <rect x="1" y="1" width="20" height="14" rx="3" fill="var(--h-solid)"/>
       <path d="M5 15l-1 6 7-6z" fill="var(--h-solid)"/>
@@ -230,6 +245,8 @@ button, textarea { font-family: inherit; }
       <path d="M29 25l1 3-7-3z" fill="var(--d-solid)"/>
     </svg>
     <span class="brand-name">ひと目トーク</span>
+    </button>
+    <span class="sr" id="aboutHint">3回続けて押すと、このアプリについての窓が開きます。</span>
   </h1>
   <div class="acts">
     <button type="button" class="quiet" id="undo">ひとつ戻す</button>
@@ -268,6 +285,17 @@ button, textarea { font-family: inherit; }
 </main>
 
 <div class="sr" id="sr" role="status" aria-live="polite"></div>
+
+<dialog class="about" id="aboutDlg" aria-labelledby="aboutTitle">
+  <h2 id="aboutTitle">このアプリについて</h2>
+  <p class="about-ver">ひと目トーク　<span id="aboutVer"></span></p>
+  <ul class="about-links">
+    <li><a href="changelog.html" target="_blank" rel="noopener">更新のお知らせ</a></li>
+    <li id="feedbackRow" hidden><a id="feedbackLink" href="#" target="_blank" rel="noopener noreferrer">ご意見・ふぐあいを送る</a></li>
+  </ul>
+  <p class="about-note">リンクは別のタブで開きます。アプリの表示内容は送られません。</p>
+  <button type="button" class="about-close" id="aboutClose">とじる</button>
+</dialog>
 
 <script>
 (function () {
@@ -654,6 +682,28 @@ button, textarea { font-family: inherit; }
   }
   document.addEventListener('pointerdown', lock);
   document.addEventListener('visibilitychange', lock);
+
+  /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
+  var APP_VERSION = '14';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var FEEDBACK_URL = '';        /* ご意見フォームのURL。空のときはリンクを出さない */
+  var aboutDlg = $('#aboutDlg');
+  function openAbout() {
+    $('#aboutVer').textContent = '版 ' + APP_VERSION;
+    $('#feedbackRow').hidden = !FEEDBACK_URL;
+    if (FEEDBACK_URL) $('#feedbackLink').href = FEEDBACK_URL;
+    if (!aboutDlg.open) aboutDlg.showModal();
+  }
+  (function () {
+    var n = 0, t = 0;
+    $('#about').addEventListener('click', function (e) {
+      if (e.detail === 0) { openAbout(); return; }
+      var now = Date.now();
+      n = now - t < 1500 ? n + 1 : 1;
+      t = now;
+      if (n >= 3) { n = 0; openAbout(); }
+    });
+  })();
+  $('#aboutClose').addEventListener('click', function () { aboutDlg.close(); });
 
   render(false);
   fitHeader();
