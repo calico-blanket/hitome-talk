@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>更新のお知らせ - ひと目トーク</title>
+<meta name="theme-color" content="#0B5CAD">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --ink: #101820; --ink-2: #404C58; --line: #6F7B87; --focus: #6B21A8; --link: #0B5CAD;
+  --font: 'BIZ UDPGothic', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0E1216; --surface: #171D23; --ink: #F1F5F9; --ink-2: #B6C2CE; --line: #6B7A8A; --focus: #FFD60A; --link: #6DB0FF; color-scheme: dark; }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.6;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+:focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; }
+main { max-width: 40rem; margin: 0 auto; }
+a { color: var(--link); }
+.back { display: inline-flex; align-items: center; min-height: 48px; font-weight: 700; }
+h1 { margin: 8px 0 4px; font-size: 1.5rem; }
+.lead { margin: 0 0 20px; color: var(--ink-2); }
+article { margin: 0 0 16px; padding: 12px 16px; border: 3px solid var(--line); border-radius: 10px; background: var(--surface); }
+article h2 { margin: 0 0 6px; font-size: 1.15rem; }
+article time { color: var(--ink-2); font-weight: 400; }
+article ul { margin: 0; padding-left: 1.4em; }
+article li + li { margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← アプリに戻る</a>
+  <h1>更新のお知らせ</h1>
+  <p class="lead">ご意見・ふぐあいをもとに直した内容を、新しい順に載せています。</p>
+
+  <article>
+    <h2>版 14 <time datetime="2026-11-06">（2026年11月6日）</time></h2>
+    <ul>
+      <li>「更新のお知らせ」（このページ）を追加しました。</li>
+      <li>画面左上のロゴ（ひと目トーク）を 3 回続けて押すと、「このアプリについて」の窓が開くようにしました。</li>
+    </ul>
+  </article>
+
+  <article>
+    <h2>版 1 〜 13 <time datetime="2026-10">（2026年10月〜11月）</time></h2>
+    <ul>
+      <li>スマホの狭い画面でも、見出しとボタンが 1 行に収まるようにしました。</li>
+      <li>返事の候補が見やすいよう、一覧の高さを広げました。</li>
+      <li>最初の画面の案内文が、枠からはみ出さないようにしました。</li>
+      <li>新しい版が、アプリを開いたときにすぐ反映されるようにしました。</li>
+      <li>機内モードでも使えるようにしました。</li>
+    </ul>
+  </article>
+</main>
+</body>
+</html>
