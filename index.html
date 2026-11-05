@@ -291,6 +291,7 @@ button, textarea { font-family: inherit; }
   <p class="about-ver">ひと目トーク　<span id="aboutVer"></span></p>
   <ul class="about-links">
     <li><a href="changelog.html" target="_blank" rel="noopener">更新のお知らせ</a></li>
+    <li><a href="license.html" target="_blank" rel="noopener">権利・ライセンス</a></li>
     <li id="feedbackRow" hidden><a id="feedbackLink" href="#" target="_blank" rel="noopener noreferrer">ご意見・ふぐあいを送る</a></li>
   </ul>
   <p class="about-note">リンクは別のタブで開きます。アプリの表示内容は送られません。</p>
@@ -684,7 +685,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '14';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '15';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = '';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
