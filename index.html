@@ -151,6 +151,9 @@ button, textarea { font-family: inherit; }
 .role-btn[aria-pressed="true"] { background: var(--solid); color: var(--on); }
 .role-btn[aria-pressed="true"]::before { content: "✓ "; }
 
+/* 入力欄を開いたとき: 一覧を潰さず、ボタン側全体を縦にスクロールできるようにする */
+.pad.free-open { overflow-y: auto; overscroll-behavior: contain; }
+.pad.free-open .list { flex: 0 0 8.5rem; }
 .list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 8px; }
 .grp h2 { margin: 0 0 6px; font-size: .95rem; font-weight: 700; color: var(--ink-2); }
 .btns { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); }
@@ -204,6 +207,20 @@ button, textarea { font-family: inherit; }
   border: 3px solid var(--ink); border-radius: 6px;
   background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700;
 }
+.free-col { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.free-row .free-col button { min-height: 48px; padding: 0 10px; font-size: 1rem; }
+.free-row .free-col .free-save { background: var(--surface); color: var(--ink); }
+.free-note { margin: 0; font-size: .8rem; line-height: 1.35; color: var(--ink-2); }
+
+/* 自分の言葉(この端末に保存) */
+.mine-row { display: flex; gap: 6px; }
+.mine-row .say { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.mine-del {
+  flex: none; min-width: 48px; min-height: 48px; cursor: pointer;
+  border: 3px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font-size: 1.2rem; font-weight: 700;
+}
+.mine-list { display: flex; flex-direction: column; gap: 8px; }
 
 /* 狭い縦長の画面: 上部バーを1行に収め、返事の一覧に高さを回す */
 .brand-name { white-space: nowrap; }
@@ -230,6 +247,7 @@ button, textarea { font-family: inherit; }
 .about-links { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .about-links a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-weight: 700; text-decoration: underline; }
 .about-note { font-size: .95rem; color: var(--ink-2); }
+.about-erase { min-height: 48px; width: 100%; margin-bottom: 8px; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700; }
 .about-close { min-height: 48px; width: 100%; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700; }
 </style>
 </head>
@@ -277,8 +295,12 @@ button, textarea { font-family: inherit; }
         <label for="free">文字を入力（<span id="freeAs"></span>として表示）</label>
         <div class="free-row">
           <textarea id="free" rows="2" maxlength="100" autocomplete="off"></textarea>
-          <button type="button" id="freeSend">大きく表示</button>
+          <div class="free-col">
+            <button type="button" id="freeSend">大きく表示</button>
+            <button type="button" class="free-save" id="freeSave">ボタンに保存</button>
+          </div>
         </div>
+        <p class="free-note" id="freeNote">「ボタンに保存」は、この端末の中だけに残します。ほかの人に見られることがあります。</p>
       </div>
     </div>
   </section>
@@ -295,6 +317,7 @@ button, textarea { font-family: inherit; }
     <li id="feedbackRow" hidden><a id="feedbackLink" href="#" target="_blank" rel="noopener noreferrer">ご意見・ふぐあいを送る</a></li>
   </ul>
   <p class="about-note">リンクは別のタブで開きます。アプリの表示内容は送られません。</p>
+  <button type="button" class="about-erase" id="aboutErase" hidden>保存した言葉をすべて消す</button>
   <button type="button" class="about-close" id="aboutClose">とじる</button>
 </dialog>
 
@@ -424,7 +447,39 @@ button, textarea { font-family: inherit; }
     { k: 'right', w: '右',       rot: 0 }
   ];
 
-  var S = { tab: 'd', hist: [], sug: [], target: '出口', freeOpen: false };
+  var S = { tab: 'd', hist: [], sug: [], target: '出口', freeOpen: false, mine: [] };
+
+  /* ---- 自分の言葉: この端末のブラウザ(localStorage)にだけ残す。どこにも送らない ---- */
+  var MINE_KEY = 'hitome-talk:phrases';
+  var MINE_MAX = 20;
+  function mineLoad() {
+    try {
+      var a = JSON.parse(localStorage.getItem(MINE_KEY) || '[]');
+      if (!Array.isArray(a)) return [];
+      return a.filter(function (x) {
+        return x && (x.r === 'h' || x.r === 'd' || x.r === 'a') && typeof x.t === 'string' && x.t && x.t.length <= 100;
+      }).slice(0, MINE_MAX);
+    } catch (e) { return []; }
+  }
+  function mineSave() {
+    try {
+      if (S.mine.length) localStorage.setItem(MINE_KEY, JSON.stringify(S.mine));
+      else localStorage.removeItem(MINE_KEY);
+      return true;
+    } catch (e) { return false; }
+  }
+  function mineAvailable() {
+    try {
+      localStorage.setItem(MINE_KEY + ':t', '1');
+      localStorage.removeItem(MINE_KEY + ':t');
+      return true;
+    } catch (e) { return false; }
+  }
+  function nextFor(role) {
+    return role === 'h' ? ['ok', 'unk', 'again']
+         : role === 'd' ? ['yes', 'no', 'unk', 'tool:free']
+         : [];
+  }
 
   function tabFor(id) {
     if (id.indexOf('tool:') === 0) return 'h';
@@ -457,6 +512,7 @@ button, textarea { font-family: inherit; }
   function setFree(open) {
     S.freeOpen = open;
     $('#freeBox').hidden = !open;
+    $('.pad').classList.toggle('free-open', open);
     var tg = $('#freeToggle');
     tg.setAttribute('aria-expanded', String(open));
     tg.textContent = open ? '文字入力をとじる' : '文字を入力して表示';
@@ -504,6 +560,32 @@ button, textarea { font-family: inherit; }
       ? dirTool(S.tab, 'l:')
       : el('div', { class: 'btns' }, g.ids.map(function (id) { return sayBtn(id, 'l:'); }));
     return el('section', { class: 'grp' }, el('h2', { text: g.t }), body);
+  }
+
+  function mineGroup() {
+    var rows = [];
+    S.mine.forEach(function (m, i) {
+      if (m.r !== S.tab) return;
+      rows.push(el('div', { class: 'mine-row' },
+        el('button', {
+          type: 'button', class: 'say r-' + m.r, 'data-key': 'm:' + i,
+          onclick: function () { say(m.r, m.t, { next: nextFor(m.r) }); }
+        }, m.t),
+        el('button', {
+          type: 'button', class: 'mine-del', 'data-key': 'md:' + i,
+          'aria-label': '「' + m.t + '」のボタンを消す',
+          onclick: function () {
+            if (!window.confirm('「' + m.t + '」のボタンを消しますか？')) return;
+            S.mine.splice(i, 1);
+            mineSave();
+            render(false);
+          }
+        }, '×')));
+    });
+    if (!rows.length) return null;
+    return el('section', { class: 'grp' },
+      el('h2', { text: '自分の言葉（この端末に保存）' }),
+      el('div', { class: 'mine-list' }, rows));
   }
 
   function sugBlock() {
@@ -584,6 +666,8 @@ button, textarea { font-family: inherit; }
     list.replaceChildren();
     if (S.sug.length) list.append(sugBlock());
     GROUPS[S.tab].forEach(function (g) { list.append(group(g)); });
+    var mg = mineGroup();
+    if (mg) list.append(mg);
     document.querySelectorAll('.role-btn').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-tab') === S.tab));
     });
@@ -627,16 +711,42 @@ button, textarea { font-family: inherit; }
     setFree(!S.freeOpen);
     if (S.freeOpen) $('#free').focus();
   });
+  $('#freeSave').addEventListener('click', function () {
+    var ta = $('#free');
+    var v = ta.value.trim();
+    if (!v) { ta.focus(); return; }
+    var role = S.tab;
+    var dup = S.mine.some(function (m) { return m.r === role && m.t === v; });
+    if (!dup && S.mine.length >= MINE_MAX) {
+      window.alert('保存できるのは ' + MINE_MAX + ' 個までです。いらないボタンを消してください。');
+      return;
+    }
+    if (!dup) {
+      S.mine.push({ r: role, t: v });
+      if (!mineSave()) {
+        S.mine.pop();
+        window.alert('この端末では保存できませんでした。');
+        return;
+      }
+    }
+    ta.value = '';
+    render(false);
+    $('#sr').textContent = '「' + v + '」をボタンに保存しました。一覧の下にあります。';
+  });
+  $('#aboutErase').addEventListener('click', function () {
+    if (!window.confirm('保存した言葉を、すべて消しますか？')) return;
+    S.mine = [];
+    mineSave();
+    $('#aboutErase').hidden = true;
+    render(false);
+  });
   $('#freeSend').addEventListener('click', function () {
     var ta = $('#free');
     var v = ta.value.trim();
     if (!v) { ta.focus(); return; }
     ta.value = '';
     setFree(false);
-    var next = S.tab === 'h' ? ['ok', 'unk', 'again']
-             : S.tab === 'd' ? ['yes', 'no', 'unk', 'tool:free']
-             : [];
-    say(S.tab, v, { next: next });
+    say(S.tab, v, { next: nextFor(S.tab) });
   });
 
   /* 上部バーを必ず1行に収める。残す順: ロゴ+見出し → ボタンを詰めてロゴ+見出し → 見出しだけ → ロゴだけ */
@@ -685,12 +795,13 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '15';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '16';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = 'https://forms.gle/22xuesmQfYAWmxGv8';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
     $('#aboutVer').textContent = '版 ' + APP_VERSION;
     $('#feedbackRow').hidden = !FEEDBACK_URL;
+    $('#aboutErase').hidden = !S.mine.length;
     if (FEEDBACK_URL) $('#feedbackLink').href = FEEDBACK_URL;
     if (!aboutDlg.open) aboutDlg.showModal();
   }
@@ -706,6 +817,8 @@ button, textarea { font-family: inherit; }
   })();
   $('#aboutClose').addEventListener('click', function () { aboutDlg.close(); });
 
+  if (mineAvailable()) S.mine = mineLoad();
+  else { $('#freeSave').hidden = true; $('#freeNote').hidden = true; }
   render(false);
   fitHeader();
 
