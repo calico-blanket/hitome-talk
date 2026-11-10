@@ -297,7 +297,7 @@ button, textarea { font-family: inherit; }
       <div class="free-box" id="freeBox" hidden>
         <label for="free">文字を入力（<span id="freeAs"></span>として表示）</label>
         <div class="free-row">
-          <textarea id="free" rows="2" maxlength="100" autocomplete="off" placeholder="キーボードのマイクからでも入力できます"></textarea>
+          <textarea id="free" rows="2" maxlength="100" autocomplete="off" placeholder="キーボードの&#10;マイクからでも&#10;入力できます"></textarea>
           <div class="free-col">
             <button type="button" id="freeSend">大きく表示</button>
             <button type="button" class="free-save" id="freeSave">ボタンに保存</button>
@@ -798,7 +798,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '20';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '21';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = 'https://forms.gle/22xuesmQfYAWmxGv8';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
