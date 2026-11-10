@@ -301,7 +301,7 @@ button, textarea { font-family: inherit; }
             <button type="button" class="free-save" id="freeSave">ボタンに保存</button>
           </div>
         </div>
-        <p class="free-note" id="freeNote">「ボタンに保存」は、この端末の中だけに残します。ほかの人に見られることがあります。</p>
+        <p class="free-note" id="freeNote">「ボタンに保存」は、この端末の中だけに残します。</p>
       </div>
     </div>
   </section>
@@ -796,7 +796,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '17';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '18';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = 'https://forms.gle/22xuesmQfYAWmxGv8';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
