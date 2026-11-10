@@ -152,7 +152,8 @@ button, textarea { font-family: inherit; }
 .role-btn[aria-pressed="true"]::before { content: "✓ "; }
 
 /* 入力欄を開いたとき: 一覧を潰さず、ボタン側全体を縦にスクロールできるようにする */
-.pad.free-open { overflow-y: auto; overscroll-behavior: contain; }
+/* 縦スクロールで左右がクリップされるので、枠線・フォーカス枠の分だけ余白をとる */
+.pad.free-open { overflow-y: auto; overscroll-behavior: contain; padding: 4px 10px 6px 8px; }
 .pad.free-open .list { flex: 0 0 8.5rem; }
 .list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 8px; }
 .grp h2 { margin: 0 0 6px; font-size: .95rem; font-weight: 700; color: var(--ink-2); }
@@ -208,7 +209,7 @@ button, textarea { font-family: inherit; }
   background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700;
 }
 .free-col { flex: none; display: flex; flex-direction: column; gap: 6px; }
-.free-row .free-col button { min-height: 48px; padding: 0 10px; font-size: 1rem; }
+.free-row .free-col button { min-height: 48px; padding: 0 4px; font-size: .85rem; }
 .free-row .free-col .free-save { background: var(--surface); color: var(--ink); }
 .free-note { margin: 0; font-size: .8rem; line-height: 1.35; color: var(--ink-2); }
 
@@ -795,7 +796,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '16';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '17';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = 'https://forms.gle/22xuesmQfYAWmxGv8';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
