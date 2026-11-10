@@ -1,10 +1,11 @@
 /* ひと目トーク service worker: 本体を事前キャッシュし、オフラインで起動する */
-var CACHE = 'hitome-talk-v22';
+var CACHE = 'hitome-talk-v23';
 var ASSETS = [
   './',
   './index.html',
   './changelog.html',
   './license.html',
+  './help.html',
   './manifest.webmanifest',
   './icon.svg',
   './icon-192.png',
