@@ -140,6 +140,10 @@ button, textarea { font-family: inherit; }
 }
 .card[data-role="e"] .msg-t { font-size: clamp(1.25rem, 5vmin, 2.2rem); font-weight: 400; }
 
+/* アプリを開いたときの案内の窓(「今後は表示しない」を押すまで出る) */
+.intro-btns { display: flex; flex-direction: column; gap: 8px; }
+.intro-hide { min-height: 48px; width: 100%; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700; }
+
 /* ボタン側 */
 .pad { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
 .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: none; }
@@ -248,7 +252,7 @@ button, textarea { font-family: inherit; }
 .about p { margin: 0 0 12px; }
 .about-ver { color: var(--ink-2); }
 .about-links { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.about-links a { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-weight: 700; text-decoration: underline; }
+.about-links a { display: flex; align-items: center; min-height: 48px; padding: 0 10px; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-weight: 700; text-decoration: underline; }
 .about-note { font-size: .95rem; color: var(--ink-2); }
 .about-erase { min-height: 48px; width: 100%; margin-bottom: 8px; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 1rem; font-weight: 700; }
 .about-close { min-height: 48px; width: 100%; cursor: pointer; border: 3px solid var(--ink); border-radius: 6px; background: var(--ink); color: var(--bg); font-size: 1.05rem; font-weight: 700; }
@@ -310,6 +314,15 @@ button, textarea { font-family: inherit; }
 </main>
 
 <div class="sr" id="sr" role="status" aria-live="polite"></div>
+
+<dialog class="about" id="introDlg" aria-labelledby="introTitle">
+  <h2 id="introTitle">お知らせ</h2>
+  <p>左上のロゴ（ひと目トーク）を3回続けて押すと、使い方・更新のお知らせ・ご意見の送り先・権利の案内が見られます。</p>
+  <div class="intro-btns">
+    <button type="button" class="about-close" id="introClose" autofocus>とじる</button>
+    <button type="button" class="intro-hide" id="introHide">今後は表示しない</button>
+  </div>
+</dialog>
 
 <dialog class="about" id="aboutDlg" aria-labelledby="aboutTitle">
   <h2 id="aboutTitle">このアプリについて</h2>
@@ -451,7 +464,16 @@ button, textarea { font-family: inherit; }
     { k: 'right', w: '右',       rot: 0 }
   ];
 
-  var S = { tab: 'd', hist: [], sug: [], target: '出口', freeOpen: false, mine: [] };
+  var S = { tab: 'd', hist: [], sug: [], target: '出口', freeOpen: false, mine: [], hintOff: false };
+
+  /* ---- 最初の案内を出さない印: 端末の localStorage に「1」だけ残す(入力内容ではない) ---- */
+  var HINT_KEY = 'hitome-talk:hint-hidden';
+  function hintLoad() {
+    try { return localStorage.getItem(HINT_KEY) === '1'; } catch (e) { return false; }
+  }
+  function hintSave() {
+    try { localStorage.setItem(HINT_KEY, '1'); } catch (e) {}
+  }
 
   /* ---- 自分の言葉: この端末のブラウザ(localStorage)にだけ残す。どこにも送らない ---- */
   var MINE_KEY = 'hitome-talk:phrases';
@@ -737,6 +759,12 @@ button, textarea { font-family: inherit; }
     render(false);
     $('#sr').textContent = '「' + v + '」をボタンに保存しました。一覧の下にあります。';
   });
+  $('#introClose').addEventListener('click', function () { $('#introDlg').close(); });
+  $('#introHide').addEventListener('click', function () {
+    S.hintOff = true;
+    hintSave();
+    $('#introDlg').close();
+  });
   $('#aboutErase').addEventListener('click', function () {
     if (!window.confirm('保存した言葉を、すべて消しますか？')) return;
     S.mine = [];
@@ -799,7 +827,7 @@ button, textarea { font-family: inherit; }
   document.addEventListener('visibilitychange', lock);
 
   /* このアプリについて: ロゴ+見出しを1.5秒以内に3回押すと開く。キーボード・読み上げ(click.detailが0)は1回で開く */
-  var APP_VERSION = '23';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
+  var APP_VERSION = '24';       /* 更新のお知らせ(changelog.html)と sw.js の CACHE と同じ番号にする */
   var FEEDBACK_URL = 'https://forms.gle/22xuesmQfYAWmxGv8';        /* ご意見フォームのURL。空のときはリンクを出さない */
   var aboutDlg = $('#aboutDlg');
   function openAbout() {
@@ -821,10 +849,16 @@ button, textarea { font-family: inherit; }
   })();
   $('#aboutClose').addEventListener('click', function () { aboutDlg.close(); });
 
+  S.hintOff = hintLoad();
   if (mineAvailable()) S.mine = mineLoad();
   else { $('#freeSave').hidden = true; $('#freeNote').hidden = true; }
   render(false);
   fitHeader();
+  /* アプリを開いたとき、ロゴの隠し機能の案内を出す(「今後は表示しない」を押した端末には出さない) */
+  if (!S.hintOff) {
+    if (!mineAvailable()) $('#introHide').hidden = true;
+    $('#introDlg').showModal();
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
