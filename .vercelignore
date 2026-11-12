@@ -1,0 +1,9 @@
+# 本番（vercel deploy）に上げないもの。
+# vercel deploy は Git に入れていないファイルも含めて、フォルダの中身をそのまま公開するため、
+# 開発用のファイルはここに書いて外す。
+.claude/
+docs/
+CLAUDE.md
+README.md
+.gitignore
+.vercelignore
