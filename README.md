@@ -93,6 +93,7 @@
 - `manifest.webmanifest` / `icon.svg` / `icon-192.png` / `icon-512.png` … PWA 設定とアイコン
 - `sw.js` … オフライン用の service worker（更新したら `CACHE` のバージョンを上げる）
 - `docs/LESSONS.md` … 過去の失敗と教訓
+- `.vercelignore` … 本番に上げないファイル（`docs/`・`CLAUDE.md`・`README.md`・`.claude/` など）
 
 ## ライセンス
 
